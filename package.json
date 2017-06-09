@@ -1,6 +1,6 @@
 {
   "name": "@zaygraveyard/rollup-plugin-babel",
-  "version": "2.8.1",
+  "version": "2.8.2",
   "description": "Seamless integration between Rollup and Babel.",
   "main": "dist/rollup-plugin-babel.cjs.js",
   "jsnext:main": "dist/rollup-plugin-babel.es.js",
