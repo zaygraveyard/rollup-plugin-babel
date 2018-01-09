@@ -1,5 +1,5 @@
 export const INLINE = {};
 export const RUNTIME = {};
-export const EXTERNAL = {};
+export const BUNDLED = {};
 
-export const HELPERS = 'rollupPluginBabelHelpers';
+export const HELPERS = '\0babelHelpers';

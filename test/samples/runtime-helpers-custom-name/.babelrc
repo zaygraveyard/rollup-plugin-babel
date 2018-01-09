@@ -1,6 +1,6 @@
 {
-  "presets": [ ["@babel/env", { "modules": false } ] ],
-  "plugins": [
-    ["@babel/transform-runtime", { "moduleName": "custom-name" }]
-  ]
+	"presets": [ "es2015-rollup" ],
+	"plugins": [
+		["transform-runtime", { "moduleName": "custom-name" }]
+	]
 }

@@ -4,9 +4,6 @@ var rollup = require( 'rollup' );
 var SourceMapConsumer = require( 'source-map' ).SourceMapConsumer;
 var babelPlugin = require( '..' );
 
-// from ./src/constantss
-var HELPERS = 'rollupPluginBabelHelpers';
-
 require( 'source-map-support' ).install();
 
 process.chdir( __dirname );
@@ -58,19 +55,10 @@ describe( 'rollup-plugin-babel', function () {
 			var generated = bundle.generate();
 			var code = generated.code;
 
-			assert.ok( code.indexOf( 'function _classCallCheck' ) !== -1, generated.code );
-		});
-	});
-
-	it( 'adds helpers in loose mode', function () {
-		return rollup.rollup({
-			entry: 'samples/class-loose/main.js',
-			plugins: [ babelPlugin() ]
-		}).then( function ( bundle ) {
-			var generated = bundle.generate();
-			var code = generated.code;
-
-			assert.ok( code.indexOf( 'function _inherits' ) !== -1, generated.code );
+			// TODO not the greatest test... inline helpers are prefixed with
+			// an underscore for whatever reason
+			assert.ok( code.indexOf( 'var classCallCheck =' ) !== -1, generated.code );
+			assert.ok( code.indexOf( 'var _classCallCheck =' ) === -1, generated.code );
 		});
 	});
 
@@ -82,7 +70,7 @@ describe( 'rollup-plugin-babel', function () {
 			var generated = bundle.generate();
 			var code = generated.code;
 
-			assert.ok( code.indexOf( HELPERS ) === -1, generated.code );
+			assert.ok( code.indexOf( 'babelHelpers' ) === -1, generated.code );
 		});
 	});
 
@@ -95,7 +83,7 @@ describe( 'rollup-plugin-babel', function () {
 			var code = generated.code;
 
 			assert.ok( code.indexOf( 'babelHelpers =' ) === -1, generated.code );
-			assert.ok( code.indexOf( `${HELPERS}.classCallCheck =` ) === -1, generated.code );
+			assert.ok( code.indexOf( 'babelHelpers.classCallCheck =' ) === -1, generated.code );
 		});
 	});
 
@@ -136,9 +124,9 @@ describe( 'rollup-plugin-babel', function () {
 		});
 	});
 
-	it( 'works with proposal-decorators (#18)', function () {
+	it( 'works with transform-decorators-legacy (#18)', function () {
 		return rollup.rollup({
-			entry: 'samples/proposal-decorators/main.js',
+			entry: 'samples/transform-decorators-legacy/main.js',
 			plugins: [ babelPlugin() ]
 		});
 	});
@@ -152,7 +140,7 @@ describe( 'rollup-plugin-babel', function () {
 				assert.ok( false, 'promise should not fulfil' );
 			})
 			.catch( function ( err ) {
-				assert.ok( /error transforming/i.test( err.message ), 'Expected an error about external helpers or module transform, got "' + err.message + '"' );
+				assert.ok( /configuring-babel/.test( err.message ), 'Expected an error about external helpers or module transform, got "' + err.message + '"' );
 			});
 	});
 
@@ -161,11 +149,11 @@ describe( 'rollup-plugin-babel', function () {
 			entry: 'samples/runtime-helpers/main.js',
 			plugins: [ babelPlugin({ runtimeHelpers: true }) ],
 			onwarn: function ( msg ) {
-				assert.equal( msg, 'Treating \'@babel/runtime/helpers/classCallCheck\' as external dependency' );
+				assert.equal( msg, 'Treating \'babel-runtime/helpers/classCallCheck\' as external dependency' );
 			}
 		}).then( function ( bundle ) {
 			var cjs = bundle.generate({ format: 'cjs' }).code;
-			assert.ok( !~cjs.indexOf( HELPERS ) );
+			assert.ok( !~cjs.indexOf( 'babelHelpers' ) );
 		});
 	});
 
@@ -180,22 +168,7 @@ describe( 'rollup-plugin-babel', function () {
 			}
 		}).then( function ( bundle ) {
 			var cjs = bundle.generate({ format: 'cjs' }).code;
-			assert.ok( !~cjs.indexOf( HELPERS ) );
-		});
-	});
-
-	it( 'warns about deprecated usage with external-helper plugin', () => {
-		let messages = [];
-		console.warn = msg => messages.push( msg );
-
-		return rollup.rollup({
-			entry: 'samples/external-helpers-deprecated/main.js',
-			plugins: [ babelPlugin() ],
-		}).then( (bundle) => {
-			console.warn = consoleWarn;
-			assert.deepEqual( messages, [
-				'Using "external-helpers" plugin with rollup-plugin-babel is deprecated, as it now automatically deduplicates your Babel helpers.'
-			]);
+			assert.ok( !~cjs.indexOf( 'babelHelpers' ) );
 		});
 	});
 
@@ -219,6 +192,33 @@ describe( 'rollup-plugin-babel', function () {
 		});
 	});
 
+	it( 'warns on duplicated helpers', () => {
+		let messages = [];
+
+		return rollup.rollup({
+			entry: 'samples/duplicated-helpers-warning/main.js',
+			plugins: [ babelPlugin() ],
+			onwarn: msg => messages.push( msg )
+		}).then( () => {
+			assert.deepEqual( messages, [
+				'The \'classCallCheck\' Babel helper is used more than once in your code. It\'s strongly recommended that you use the "external-helpers" plugin or the "es2015-rollup" preset. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information'
+			]);
+		});
+	});
+
+	it( 'does not warn on duplicated helpers if correctly configured', () => {
+		let messages = [];
+		console.warn = msg => messages.push( msg );
+
+		return rollup.rollup({
+			entry: 'samples/duplicated-helpers-no-warning/main.js',
+			plugins: [ babelPlugin() ]
+		}).then( () => {
+			console.warn = consoleWarn;
+			assert.deepEqual( messages, []);
+		});
+	});
+
 	it( 'produces valid code with typeof helper', () => {
 		return rollup.rollup({
 			entry: 'samples/typeof/main.js',
@@ -226,6 +226,22 @@ describe( 'rollup-plugin-babel', function () {
 		}).then( bundle => {
 			var generated = bundle.generate();
 			assert.equal( generated.code.indexOf( 'var typeof' ), -1, generated.code );
+		});
+	});
+
+	it( 'does not warn about duplicated helpers with transform-runtime', () => {
+		return rollup.rollup({
+			entry: 'samples/runtime-helpers-duplicated/main.js',
+			plugins: [
+				babelPlugin({
+					runtimeHelpers: true
+				})
+			],
+			onwarn ( msg ) {
+				if ( /helper is used more than once in your code/.test( msg ) ) {
+					throw new Error( 'no warning about duplicated helpers should be given' );
+				}
+			}
 		});
 	});
 });
