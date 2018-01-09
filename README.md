@@ -18,10 +18,17 @@ Using Rollup with rollup-plugin-babel makes the process far easier.
 
 ## Installation
 
+> babel 6.x
+
 ```bash
-npm install --save-dev rollup-plugin-babel
+npm install --save-dev rollup-plugin-babel@latest
 ```
 
+> babel 7.x - beta
+
+```bash
+npm install --save-dev rollup-plugin-babel@next
+```
 
 ## Usage
 
@@ -41,7 +48,7 @@ rollup({
 
 All options are as per the [Babel documentation](https://babeljs.io/), except the following:
 
-   * `options.externalHelpers`: a boolean value indicating whether to bundle in the babel helpers
+   * `options.externalHelpers`: a boolean value indicating whether to bundle in the Babel helpers
    * `options.include` and `options.exclude`: each a minimatch pattern, or array of minimatch patterns, which determine which files are transpiled by Babel (by default, all files are transpiled)
    * `options.externalHelpersWhitelist`: an array which gives explicit control over which babelHelper functions are allowed in the bundle (by default, every helper is allowed)
 
@@ -49,7 +56,7 @@ Babel will respect `.babelrc` files – this is generally the best place to put 
 
 ### External dependencies
 
-Ideally, you should only be transforming your own source code, rather than running all of your external dependencies through Babel – hence the `exclude: 'node_modules/**'` in the example above. If you have a dependency that exposes untranspiled ES6 source code that doesn't run in your target environment, then you may need to break this rule, but it often causes problems with unusual `.babelrc` files or mismatched versions of Babel.
+Ideally, you should only be transforming your source code, rather than running all of your external dependencies through Babel – hence the `exclude: 'node_modules/**'` in the example above. If you have a dependency that exposes untranspiled ES6 source code that doesn't run in your target environment, then you may need to break this rule, but it often causes problems with unusual `.babelrc` files or mismatched versions of Babel.
 
 We encourage library authors not to distribute code that uses untranspiled ES6 features (other than modules) for this reason. Consumers of your library should *not* have to transpile your ES6 code, any more than they should have to transpile your CoffeeScript, ClojureScript or TypeScript.
 
@@ -61,7 +68,7 @@ Use `babelrc: false` to prevent Babel from using local (i.e. to your external de
 **The following applies to Babel 6 only. If you're using Babel 5, do `npm i -D rollup-plugin-babel@1`, as version 2 and above no longer supports Babel 5**
 
 ```bash
-npm install --save-dev babel-preset-es2015 babel-plugin-external-helpers
+npm install --save-dev babel-preset-env babel-plugin-external-helpers
 ```
 
 ```js
@@ -69,7 +76,7 @@ npm install --save-dev babel-preset-es2015 babel-plugin-external-helpers
 {
   "presets": [
     [
-      "es2015",
+      "env",
       {
         "modules": false
       }
@@ -83,7 +90,7 @@ npm install --save-dev babel-preset-es2015 babel-plugin-external-helpers
 
 ### Modules
 
-The `es2015` preset includes the [transform-es2015-modules-commonjs](http://babeljs.io/docs/plugins/transform-es2015-modules-commonjs/) plugin, which converts ES6 modules to CommonJS – preventing Rollup from working. Since Babel 6.3 it's possible to deactivate module transformation with `"modules": false`. So there is no need to use the old workaround with `babel-preset-es2015-rollup`, that work for Babel <6.13. Rollup will throw an error if this is incorrectly configured.
+The `env` preset includes the [transform-es2015-modules-commonjs](http://babeljs.io/docs/plugins/transform-es2015-modules-commonjs/) plugin, which converts ES6 modules to CommonJS – preventing Rollup from working. Since Babel 6.3 it's possible to deactivate module transformation with `"modules": false`. So there is no need to use the old workaround with `babel-preset-es2015-rollup`, that will work for Babel <6.13. Rollup will throw an error if this is incorrectly configured.
 
 ### Helpers
 
